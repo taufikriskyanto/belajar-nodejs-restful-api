@@ -1,7 +1,6 @@
 import winston from "winston";
-import winston from "winston/lib/winston/config";
 
-export const winston = winston.createLogger({
+export const logger = winston.createLogger({
     level: "info",
         colorize : winston.addColors({ request: 'bold cyan magentaBG' }),
         format: winston.format.combine(
