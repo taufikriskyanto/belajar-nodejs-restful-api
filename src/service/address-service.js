@@ -1,10 +1,11 @@
 import { validate } from "../validation/validation.js";
-import { createAddressValidation } from "../validation/address-validation.js";
+import { createAddressValidation, validationAddressId } from "../validation/address-validation.js";
 import { prismaClient } from "../application/database.js";
 import { ResponseError } from "../error/response-error.js";
 import { getContactValidation } from "../validation/contact-validation.js";
+import { logger } from "../application/logging.js";
 
-const create = async (user, contactId, request) => {
+const checkContactMustExists = async(user, contactId)=>{
     contactId = validate(getContactValidation, contactId);
     const totalContactInDatabase = await prismaClient.contact.count({
         where: {
@@ -16,6 +17,12 @@ const create = async (user, contactId, request) => {
     if (totalContactInDatabase !==1){
         throw new ResponseError(404, "Contact is not found");
     }
+    return contactId;
+}
+const create = async (user, contactId, request) => {
+    contactId = await checkContactMustExists(user, contactId);
+
+
     const address = validate(createAddressValidation, request);
 
     address.contact_id = contactId;
@@ -32,6 +39,34 @@ const create = async (user, contactId, request) => {
     });
 }
 
+const getAddress = async(user, contactId, addressId)=>{
+    contactId =  await checkContactMustExists(user, contactId);
+
+    addressId = validate(validationAddressId, addressId);
+    
+    const result =  await prismaClient.address.findUnique({
+        where :{
+            id: addressId,
+            contact_id: contactId
+        },
+        select:{
+            id: true,
+            street: true,
+            city: true,
+            province: true,
+            country: true,
+            postal_code: true
+        }
+    });
+    
+    if(result === null){
+        throw new ResponseError(404, "Address is not found");
+    }
+    logger.info(`Result Address ${result}`);
+    return result;
+}
+
 export default {
-    create
+    create,
+    getAddress
 }
