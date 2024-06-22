@@ -1,3 +1,4 @@
+import { logger } from "../application/logging.js";
 import addressService from "../service/address-service.js";
 
 
@@ -34,7 +35,26 @@ const get  =  async (req, res, next)=>{
 }
 
 
+const update  =  async (req, res, next)=>{
+    try{
+        logger.error(`${req.params}`)
+        const user = req.user;
+        const contactId = req.params.contactId;
+        const addressId = req.params.addressId;
+        const request = req.body;
+        request.id = addressId;
+        const result  =  await addressService.update(user, contactId, request);
+        res.status(200).json({
+            data :  result
+        })
+    }catch(e){
+        next(e);
+    }
+}
+
+
 export default {
     create,
-    get
+    get,
+    update
 }
